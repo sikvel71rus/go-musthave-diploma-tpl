@@ -30,6 +30,5 @@ jobs:
           mv $GITHUB_WORKSPACE/.tools/statictest /usr/local/bin/statictest
 
       - name: Run statictest
-        working-directory: cmd/gophermart
         run: |
           go vet -vettool=$(which statictest) ./...
