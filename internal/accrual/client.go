@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"gophermart/cmd/gophermart/internal/model"
+	"gophermart/internal/model"
 )
 
 var (
