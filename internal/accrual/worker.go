@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"gophermart/cmd/gophermart/internal/model"
+	"gophermart/internal/model"
 )
 
 type orderStore interface {
