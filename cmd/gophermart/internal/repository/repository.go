@@ -10,7 +10,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
-	"gophermart/internal/model"
+	"gophermart/cmd/gophermart/internal/model"
 )
 
 //go:embed migrations/*.sql
@@ -123,15 +123,20 @@ func (s *Store) AddOrder(ctx context.Context, userID int64, number string) (Orde
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, `
+	result, err := tx.ExecContext(ctx, `
 		INSERT INTO gm_orders (number, user_id, status)
 		VALUES ($1, $2, $3)
+		ON CONFLICT (number) DO NOTHING
 	`, number, userID, model.OrderStatusNew)
-	if err == nil {
-		return OrderUploadAccepted, tx.Commit()
-	}
-	if !isUniqueViolation(err) {
+	if err != nil {
 		return 0, err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	if rowsAffected == 1 {
+		return OrderUploadAccepted, tx.Commit()
 	}
 
 	var ownerID int64
@@ -142,7 +147,7 @@ func (s *Store) AddOrder(ctx context.Context, userID int64, number string) (Orde
 		return 0, ErrOrderOwnedByAnotherUser
 	}
 
-	return OrderUploadDuplicate, nil
+	return OrderUploadDuplicate, tx.Commit()
 }
 
 func (s *Store) ListOrders(ctx context.Context, userID int64) ([]model.Order, error) {

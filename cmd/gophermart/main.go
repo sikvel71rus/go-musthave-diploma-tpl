@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"gophermart/internal/accrual"
-	"gophermart/internal/auth"
-	"gophermart/internal/config"
-	"gophermart/internal/handler"
-	"gophermart/internal/logger"
-	"gophermart/internal/middleware"
-	"gophermart/internal/repository"
-	"gophermart/internal/service"
+	"gophermart/cmd/gophermart/internal/accrual"
+	"gophermart/cmd/gophermart/internal/auth"
+	"gophermart/cmd/gophermart/internal/config"
+	"gophermart/cmd/gophermart/internal/handler"
+	"gophermart/cmd/gophermart/internal/logger"
+	"gophermart/cmd/gophermart/internal/middleware"
+	"gophermart/cmd/gophermart/internal/repository"
+	"gophermart/cmd/gophermart/internal/service"
 )
 
 func main() {

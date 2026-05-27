@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"gophermart/internal/model"
-	"gophermart/internal/repository"
-	"gophermart/internal/service"
+	"gophermart/cmd/gophermart/internal/model"
+	"gophermart/cmd/gophermart/internal/repository"
+	"gophermart/cmd/gophermart/internal/service"
 )
 
 type mockService struct {

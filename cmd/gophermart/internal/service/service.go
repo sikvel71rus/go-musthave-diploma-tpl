@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"gophermart/internal/auth"
-	"gophermart/internal/model"
-	"gophermart/internal/repository"
+	"gophermart/cmd/gophermart/internal/auth"
+	"gophermart/cmd/gophermart/internal/model"
+	"gophermart/cmd/gophermart/internal/repository"
 )
 
 var (

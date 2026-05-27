@@ -7,48 +7,6 @@ import (
 	"strings"
 )
 
-type compressWriter struct {
-	w  http.ResponseWriter
-	zw *gzip.Writer
-}
-
-func newCompressWriter(w http.ResponseWriter) *compressWriter {
-	return &compressWriter{
-		w:  w,
-		zw: gzip.NewWriter(w),
-	}
-}
-
-func (c *compressWriter) Header() http.Header {
-	return c.w.Header()
-}
-
-func (c *compressWriter) Write(p []byte) (int, error) {
-	contentType := c.w.Header().Get("Content-Type")
-	if strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html") {
-		return c.zw.Write(p)
-	}
-	return c.w.Write(p)
-}
-
-func (c *compressWriter) WriteHeader(statusCode int) {
-	if statusCode < 300 {
-		contentType := c.w.Header().Get("Content-Type")
-		if strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html") {
-			c.w.Header().Set("Content-Encoding", "gzip")
-		}
-	}
-	c.w.WriteHeader(statusCode)
-}
-
-func (c *compressWriter) Close() error {
-	contentType := c.w.Header().Get("Content-Type")
-	if strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html") {
-		return c.zw.Close()
-	}
-	return nil
-}
-
 type compressReader struct {
 	r  io.ReadCloser
 	zr *gzip.Reader
@@ -79,15 +37,6 @@ func (c *compressReader) Close() error {
 
 func GzipMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ow := w
-		acceptEncoding := r.Header.Get("Accept-Encoding")
-		supportsGzip := strings.Contains(acceptEncoding, "gzip")
-		if supportsGzip {
-			cw := newCompressWriter(w)
-			ow = cw
-			defer cw.Close()
-		}
-
 		contentEncoding := r.Header.Get("Content-Encoding")
 		sendsGzip := strings.Contains(contentEncoding, "gzip")
 		if sendsGzip {
@@ -100,6 +49,6 @@ func GzipMiddleware(h http.Handler) http.Handler {
 			defer cr.Close()
 		}
 
-		h.ServeHTTP(ow, r)
+		h.ServeHTTP(w, r)
 	})
 }

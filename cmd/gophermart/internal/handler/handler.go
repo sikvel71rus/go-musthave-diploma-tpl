@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"gophermart/internal/model"
-	"gophermart/internal/repository"
-	"gophermart/internal/service"
+	"gophermart/cmd/gophermart/internal/model"
+	"gophermart/cmd/gophermart/internal/repository"
+	"gophermart/cmd/gophermart/internal/service"
 )
 
 const authCookieName = "gophermart_token"
