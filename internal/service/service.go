@@ -9,7 +9,6 @@ import (
 
 	"gophermart/internal/auth"
 	"gophermart/internal/model"
-	"gophermart/internal/repository"
 )
 
 var (
@@ -22,7 +21,7 @@ type Repository interface {
 	GetUserByLogin(ctx context.Context, login string) (model.User, error)
 	CreateSession(ctx context.Context, userID int64, token string, expiresAt time.Time) error
 	GetUserIDByToken(ctx context.Context, token string) (int64, error)
-	AddOrder(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error)
+	AddOrder(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error)
 	ListOrders(ctx context.Context, userID int64) ([]model.Order, error)
 	GetBalance(ctx context.Context, userID int64) (model.Balance, error)
 	Withdraw(ctx context.Context, userID int64, order string, sum float64) error
@@ -71,7 +70,7 @@ func (s *Service) Login(ctx context.Context, credentials model.Credentials) (str
 		return "", err
 	}
 	if !s.auth.CheckPassword(user.PasswordHash, password) {
-		return "", repository.ErrInvalidCredentials
+		return "", model.ErrInvalidCredentials
 	}
 
 	return s.createSession(ctx, user.ID)
@@ -79,12 +78,12 @@ func (s *Service) Login(ctx context.Context, credentials model.Credentials) (str
 
 func (s *Service) UserIDByToken(ctx context.Context, token string) (int64, error) {
 	if strings.TrimSpace(token) == "" {
-		return 0, repository.ErrUnauthorized
+		return 0, model.ErrUnauthorized
 	}
 	return s.repo.GetUserIDByToken(ctx, token)
 }
 
-func (s *Service) UploadOrder(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error) {
+func (s *Service) UploadOrder(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error) {
 	number = strings.TrimSpace(number)
 	if !isValidOrderNumber(number) {
 		return 0, ErrInvalidOrderNumber

@@ -16,21 +16,6 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
-var (
-	ErrLoginTaken              = errors.New("login already taken")
-	ErrInvalidCredentials      = errors.New("invalid credentials")
-	ErrUnauthorized            = errors.New("unauthorized")
-	ErrOrderOwnedByAnotherUser = errors.New("order belongs to another user")
-	ErrInsufficientFunds       = errors.New("insufficient funds")
-)
-
-type OrderUploadResult int
-
-const (
-	OrderUploadAccepted OrderUploadResult = iota
-	OrderUploadDuplicate
-)
-
 type Store struct {
 	db *sql.DB
 }
@@ -69,7 +54,7 @@ func (s *Store) CreateUser(ctx context.Context, login, passwordHash string) (int
 	`, login, passwordHash).Scan(&userID)
 	if err != nil {
 		if isUniqueViolation(err) {
-			return 0, ErrLoginTaken
+			return 0, model.ErrLoginTaken
 		}
 		return 0, err
 	}
@@ -85,7 +70,7 @@ func (s *Store) GetUserByLogin(ctx context.Context, login string) (model.User, e
 	`, login).Scan(&user.ID, &user.Login, &user.PasswordHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return model.User{}, ErrInvalidCredentials
+			return model.User{}, model.ErrInvalidCredentials
 		}
 		return model.User{}, err
 	}
@@ -109,14 +94,14 @@ func (s *Store) GetUserIDByToken(ctx context.Context, token string) (int64, erro
 	`, token).Scan(&userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, ErrUnauthorized
+			return 0, model.ErrUnauthorized
 		}
 		return 0, err
 	}
 	return userID, nil
 }
 
-func (s *Store) AddOrder(ctx context.Context, userID int64, number string) (OrderUploadResult, error) {
+func (s *Store) AddOrder(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -136,7 +121,7 @@ func (s *Store) AddOrder(ctx context.Context, userID int64, number string) (Orde
 		return 0, err
 	}
 	if rowsAffected == 1 {
-		return OrderUploadAccepted, tx.Commit()
+		return model.OrderUploadAccepted, tx.Commit()
 	}
 
 	var ownerID int64
@@ -144,10 +129,10 @@ func (s *Store) AddOrder(ctx context.Context, userID int64, number string) (Orde
 		return 0, err
 	}
 	if ownerID != userID {
-		return 0, ErrOrderOwnedByAnotherUser
+		return 0, model.ErrOrderOwnedByAnotherUser
 	}
 
-	return OrderUploadDuplicate, tx.Commit()
+	return model.OrderUploadDuplicate, tx.Commit()
 }
 
 func (s *Store) ListOrders(ctx context.Context, userID int64) ([]model.Order, error) {
@@ -206,7 +191,7 @@ func (s *Store) Withdraw(ctx context.Context, userID int64, order string, sum fl
 		return err
 	}
 	if current < sum {
-		return ErrInsufficientFunds
+		return model.ErrInsufficientFunds
 	}
 
 	if _, err := tx.ExecContext(ctx, `

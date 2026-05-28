@@ -7,7 +7,6 @@ import (
 
 	"gophermart/internal/auth"
 	"gophermart/internal/model"
-	"gophermart/internal/repository"
 )
 
 type stubRepo struct {
@@ -15,7 +14,7 @@ type stubRepo struct {
 	getUserByLoginFn   func(ctx context.Context, login string) (model.User, error)
 	createSessionFn    func(ctx context.Context, userID int64, token string, expiresAt time.Time) error
 	getUserIDByTokenFn func(ctx context.Context, token string) (int64, error)
-	addOrderFn         func(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error)
+	addOrderFn         func(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error)
 	listOrdersFn       func(ctx context.Context, userID int64) ([]model.Order, error)
 	getBalanceFn       func(ctx context.Context, userID int64) (model.Balance, error)
 	withdrawFn         func(ctx context.Context, userID int64, order string, sum float64) error
@@ -35,7 +34,7 @@ func (s *stubRepo) CreateSession(ctx context.Context, userID int64, token string
 func (s *stubRepo) GetUserIDByToken(ctx context.Context, token string) (int64, error) {
 	return s.getUserIDByTokenFn(ctx, token)
 }
-func (s *stubRepo) AddOrder(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error) {
+func (s *stubRepo) AddOrder(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error) {
 	return s.addOrderFn(ctx, userID, number)
 }
 func (s *stubRepo) ListOrders(ctx context.Context, userID int64) ([]model.Order, error) {
@@ -85,7 +84,7 @@ func TestRegister(t *testing.T) {
 		getUserIDByTokenFn: func(ctx context.Context, token string) (int64, error) {
 			return 0, nil
 		},
-		addOrderFn: func(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error) {
+		addOrderFn: func(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error) {
 			return 0, nil
 		},
 		listOrdersFn:      func(ctx context.Context, userID int64) ([]model.Order, error) { return nil, nil },
@@ -119,7 +118,7 @@ func TestLoginInvalidPassword(t *testing.T) {
 		},
 		createSessionFn:    func(ctx context.Context, userID int64, token string, expiresAt time.Time) error { return nil },
 		getUserIDByTokenFn: func(ctx context.Context, token string) (int64, error) { return 0, nil },
-		addOrderFn: func(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error) {
+		addOrderFn: func(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error) {
 			return 0, nil
 		},
 		listOrdersFn:      func(ctx context.Context, userID int64) ([]model.Order, error) { return nil, nil },
@@ -130,7 +129,7 @@ func TestLoginInvalidPassword(t *testing.T) {
 	}
 
 	svc := New(repo, manager)
-	if _, err := svc.Login(context.Background(), model.Credentials{Login: "user", Password: "wrong"}); err != repository.ErrInvalidCredentials {
+	if _, err := svc.Login(context.Background(), model.Credentials{Login: "user", Password: "wrong"}); err != model.ErrInvalidCredentials {
 		t.Fatalf("expected invalid credentials, got %v", err)
 	}
 }
@@ -141,7 +140,7 @@ func TestWithdrawValidation(t *testing.T) {
 		getUserByLoginFn:   func(ctx context.Context, login string) (model.User, error) { return model.User{}, nil },
 		createSessionFn:    func(ctx context.Context, userID int64, token string, expiresAt time.Time) error { return nil },
 		getUserIDByTokenFn: func(ctx context.Context, token string) (int64, error) { return 0, nil },
-		addOrderFn: func(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error) {
+		addOrderFn: func(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error) {
 			return 0, nil
 		},
 		listOrdersFn:      func(ctx context.Context, userID int64) ([]model.Order, error) { return nil, nil },
@@ -163,8 +162,8 @@ func TestUploadOrder(t *testing.T) {
 		getUserByLoginFn:   func(ctx context.Context, login string) (model.User, error) { return model.User{}, nil },
 		createSessionFn:    func(ctx context.Context, userID int64, token string, expiresAt time.Time) error { return nil },
 		getUserIDByTokenFn: func(ctx context.Context, token string) (int64, error) { return 0, nil },
-		addOrderFn: func(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error) {
-			return repository.OrderUploadAccepted, nil
+		addOrderFn: func(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error) {
+			return model.OrderUploadAccepted, nil
 		},
 		listOrdersFn:      func(ctx context.Context, userID int64) ([]model.Order, error) { return nil, nil },
 		getBalanceFn:      func(ctx context.Context, userID int64) (model.Balance, error) { return model.Balance{}, nil },
@@ -178,7 +177,7 @@ func TestUploadOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("upload order: %v", err)
 	}
-	if result != repository.OrderUploadAccepted {
+	if result != model.OrderUploadAccepted {
 		t.Fatalf("expected accepted result, got %v", result)
 	}
 }

@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"gophermart/internal/model"
-	"gophermart/internal/repository"
 	"gophermart/internal/service"
 )
 
@@ -25,7 +24,7 @@ type Service interface {
 	Register(ctx context.Context, credentials model.Credentials) (string, error)
 	Login(ctx context.Context, credentials model.Credentials) (string, error)
 	UserIDByToken(ctx context.Context, token string) (int64, error)
-	UploadOrder(ctx context.Context, userID int64, number string) (repository.OrderUploadResult, error)
+	UploadOrder(ctx context.Context, userID int64, number string) (model.OrderUploadResult, error)
 	ListOrders(ctx context.Context, userID int64) ([]model.Order, error)
 	GetBalance(ctx context.Context, userID int64) (model.Balance, error)
 	Withdraw(ctx context.Context, userID int64, request model.WithdrawalRequest) error
@@ -72,7 +71,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, service.ErrInvalidRequest):
 			http.Error(w, "invalid request", http.StatusBadRequest)
-		case errors.Is(err, repository.ErrLoginTaken):
+		case errors.Is(err, model.ErrLoginTaken):
 			http.Error(w, "login already taken", http.StatusConflict)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -96,7 +95,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, service.ErrInvalidRequest):
 			http.Error(w, "invalid request", http.StatusBadRequest)
-		case errors.Is(err, repository.ErrInvalidCredentials):
+		case errors.Is(err, model.ErrInvalidCredentials):
 			http.Error(w, "invalid credentials", http.StatusUnauthorized)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -127,7 +126,7 @@ func (h *Handler) uploadOrder(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, service.ErrInvalidOrderNumber):
 			http.Error(w, "invalid order number", http.StatusUnprocessableEntity)
-		case errors.Is(err, repository.ErrOrderOwnedByAnotherUser):
+		case errors.Is(err, model.ErrOrderOwnedByAnotherUser):
 			http.Error(w, "order belongs to another user", http.StatusConflict)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -135,7 +134,7 @@ func (h *Handler) uploadOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if result == repository.OrderUploadDuplicate {
+	if result == model.OrderUploadDuplicate {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -197,7 +196,7 @@ func (h *Handler) withdraw(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, service.ErrInvalidOrderNumber):
 			http.Error(w, "invalid order number", http.StatusUnprocessableEntity)
-		case errors.Is(err, repository.ErrInsufficientFunds):
+		case errors.Is(err, model.ErrInsufficientFunds):
 			http.Error(w, "insufficient funds", http.StatusPaymentRequired)
 		default:
 			http.Error(w, "internal server error", http.StatusInternalServerError)

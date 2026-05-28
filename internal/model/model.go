@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type User struct {
 	ID           int64
@@ -43,6 +46,21 @@ type AccrualOrder struct {
 	Status  string   `json:"status"`
 	Accrual *float64 `json:"accrual,omitempty"`
 }
+
+var (
+	ErrLoginTaken              = errors.New("login already taken")
+	ErrInvalidCredentials      = errors.New("invalid credentials")
+	ErrUnauthorized            = errors.New("unauthorized")
+	ErrOrderOwnedByAnotherUser = errors.New("order belongs to another user")
+	ErrInsufficientFunds       = errors.New("insufficient funds")
+)
+
+type OrderUploadResult int
+
+const (
+	OrderUploadAccepted OrderUploadResult = iota
+	OrderUploadDuplicate
+)
 
 const (
 	OrderStatusNew        = "NEW"
