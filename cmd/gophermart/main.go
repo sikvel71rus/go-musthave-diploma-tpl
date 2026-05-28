@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"gophermart/internal/accrual"
@@ -26,6 +30,9 @@ func main() {
 		log.Fatalf("logger init failed: %v", err)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	store, err := repository.New(cfg.DatabaseURI)
 	if err != nil {
 		log.Fatalf("repository init failed: %v", err)
@@ -43,10 +50,27 @@ func main() {
 			2*time.Second,
 			20,
 		)
-		go worker.Start(context.Background())
+		go worker.Start(ctx)
 	}
 
-	server := logger.RequestLogger(middleware.GzipMiddleware(httpHandler.Routes()))
+	server := &http.Server{
+		Addr:    cfg.RunAddress,
+		Handler: logger.RequestLogger(middleware.GzipMiddleware(httpHandler.Routes())),
+	}
+
 	log.Printf("gophermart service is running on %s", cfg.RunAddress)
-	log.Fatal(http.ListenAndServe(cfg.RunAddress, server))
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("server failed: %v", err)
+			stop()
+		}
+	}()
+
+	<-ctx.Done()
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("server shutdown failed: %v", err)
+	}
 }
