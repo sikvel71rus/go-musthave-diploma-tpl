@@ -2,12 +2,11 @@ package auth
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/hex"
 	"errors"
-	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Manager struct {
@@ -19,33 +18,16 @@ func NewManager(sessionTTL time.Duration) *Manager {
 }
 
 func (m *Manager) HashPassword(password string) (string, error) {
-	salt, err := randomBytes(16)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
 	}
 
-	hash := sha256.Sum256(append(salt, []byte(password)...))
-	return hex.EncodeToString(salt) + ":" + hex.EncodeToString(hash[:]), nil
+	return string(hash), nil
 }
 
 func (m *Manager) CheckPassword(encodedHash, password string) bool {
-	parts := strings.Split(encodedHash, ":")
-	if len(parts) != 2 {
-		return false
-	}
-
-	salt, err := hex.DecodeString(parts[0])
-	if err != nil {
-		return false
-	}
-
-	expected, err := hex.DecodeString(parts[1])
-	if err != nil {
-		return false
-	}
-
-	actual := sha256.Sum256(append(salt, []byte(password)...))
-	return subtle.ConstantTimeCompare(expected, actual[:]) == 1
+	return bcrypt.CompareHashAndPassword([]byte(encodedHash), []byte(password)) == nil
 }
 
 func (m *Manager) NewToken() (string, error) {

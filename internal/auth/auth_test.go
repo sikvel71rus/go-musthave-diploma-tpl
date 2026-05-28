@@ -11,6 +11,13 @@ func TestHashAndCheckPassword(t *testing.T) {
 	if err != nil {
 		t.Fatalf("hash password: %v", err)
 	}
+	hashAgain, err := manager.HashPassword("secret")
+	if err != nil {
+		t.Fatalf("hash password again: %v", err)
+	}
+	if hash == hashAgain {
+		t.Fatal("expected salted password hashes to differ")
+	}
 	if !manager.CheckPassword(hash, "secret") {
 		t.Fatal("expected password to match")
 	}

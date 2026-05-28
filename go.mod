@@ -7,6 +7,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.1
 	github.com/pressly/goose/v3 v3.27.0
 	go.uber.org/zap v1.27.1
+	golang.org/x/crypto v0.48.0
 )
 
 require (
