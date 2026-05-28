@@ -14,14 +14,18 @@ type orderStore interface {
 	UpdateOrderAccrual(ctx context.Context, number, status string, accrual *float64) error
 }
 
+type orderClient interface {
+	FetchOrder(ctx context.Context, number string) (model.AccrualOrder, time.Duration, error)
+}
+
 type Worker struct {
 	store    orderStore
-	client   *Client
+	client   orderClient
 	interval time.Duration
 	limit    int
 }
 
-func NewWorker(store orderStore, client *Client, interval time.Duration, limit int) *Worker {
+func NewWorker(store orderStore, client orderClient, interval time.Duration, limit int) *Worker {
 	return &Worker{
 		store:    store,
 		client:   client,
